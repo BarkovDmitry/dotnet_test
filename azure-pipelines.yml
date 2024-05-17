@@ -1,0 +1,24 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger: none
+
+pool: Default
+
+steps:
+- script: echo Hello, world!
+  displayName: 'Hello'
+
+- task: PowerShell@2
+  displayName: 'Checkout'
+  inputs:
+    targetType: 'inline'
+    script: |
+      mkdir target_dir
+      git clone https://github.com/BarkovDmitry/CI-CD-online-session.git -b main target_dir
+      cd target_dir
+      git fetch
+      git checkout 4758b180ca776316b7d670f72be270adb27f3370
+      Get-ItemProperty -Path $(pwd) | select-object -Property *

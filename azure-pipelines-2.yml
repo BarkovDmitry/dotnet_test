@@ -1,0 +1,63 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger: none
+
+resources:
+  repositories:
+  - repository: self 
+    type: git
+    ref: $(branch)
+
+  pipelines:
+  - pipeline: build-download-zip-trigger   # Name of the pipeline resource
+    source: 1_build_download_zip # Name of the pipeline referenced by the pipeline resource
+    trigger: true # enable the trigger
+
+pool: Default
+
+steps:
+- script: echo Download, unzip, scan!
+  displayName: 'Run a one-line script'
+
+- task: DownloadPipelineArtifact@2
+  inputs:
+    buildType: 'specific'
+    project: 'aa17b5a0-e599-4b46-8e0a-7d415cd6d3a2'
+    definition: '6'
+    specificBuildWithTriggering: true
+    buildVersionToDownload: 'latest'
+    targetPath: '$(Pipeline.Workspace)/$(Build.BuildId)/'
+
+- task: ExtractFiles@1
+  inputs:
+    archiveFilePatterns: '$(Pipeline.Workspace)/$(Build.BuildId)/drop/*.zip'
+    destinationFolder: '$(Pipeline.Workspace)/$(Build.BuildId)/unpacked/$(Build.BuildId)/'
+    cleanDestinationFolder: false
+    overwriteExistingFiles: false
+
+- task: PowerShell@2
+  inputs:
+    targetType: 'inline'
+    script: |
+      Write-Host "dll files:"
+      cd $(Pipeline.Workspace)/$(Build.BuildId)/unpacked/$(Build.BuildId)/
+      gci -r *.dll
+
+- task: PowerShell@2
+  inputs:
+    targetType: 'inline'
+    script: |
+      Write-Host "Sum of dll files:"
+      cd $(Pipeline.Workspace)/$(Build.BuildId)/unpacked/$(Build.BuildId)/
+      (gci -r *.dll | measure Length -s).Sum
+
+- task: PowerShell@2
+  inputs:
+    targetType: 'inline'
+    script: |
+      Write-Host "Sum of NOT dll files:"
+      cd $(Pipeline.Workspace)/$(Build.BuildId)/unpacked/$(Build.BuildId)/
+      (gci -r -exclude *.dll | measure Length -s).Sum
